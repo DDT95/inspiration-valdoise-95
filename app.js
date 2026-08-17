@@ -8,6 +8,29 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png
 const state = { categories: new Set(Object.keys(CATEGORIES)), markers: new Map() };
 const workLayer = L.layerGroup().addTo(map);
 
+async function loadDepartmentOutline() {
+  try {
+    const communes = await fetch("https://geo.api.gouv.fr/departements/95/communes?fields=nom,code,contour").then((r) => {
+      if (!r.ok) throw new Error();
+      return r.json();
+    });
+    const features = communes.filter((c) => c.contour).map((c) => ({ type: "Feature", properties: { nom: c.nom, code: c.code }, geometry: c.contour }));
+    const layer = L.geoJSON(
+      { type: "FeatureCollection", features },
+      {
+        style: { color: "#8fa6c9", weight: 0.6, opacity: 0.6, fillColor: "#e9eef3", fillOpacity: 0.12 },
+        onEachFeature: (f, l) => l.bindTooltip(f.properties.nom, { sticky: true }),
+      },
+    );
+    layer.addTo(map);
+    layer.bringToBack();
+    map.invalidateSize(false);
+    map.fitBounds(layer.getBounds(), { padding: [40, 40], maxZoom: 11 });
+  } catch {
+    $("mapStatus").textContent = "Fond communal momentanément indisponible · œuvres accessibles";
+  }
+}
+
 function markerIcon(category) {
   return L.divIcon({ className: "", html: `<div class="work-marker ${category}"></div>`, iconSize: [20, 20], iconAnchor: [10, 10] });
 }
@@ -138,6 +161,8 @@ function openDashboard() {
 
 buildFilters();
 renderWorks();
+loadDepartmentOutline();
+$("headlineCount").textContent = `${WORKS.length} œuvres recensées`;
 $("searchButton").onclick = search;
 $("searchInput").addEventListener("keydown", (e) => { if (e.key === "Enter") search(); });
 $("resetView").onclick = resetApplicationState;
