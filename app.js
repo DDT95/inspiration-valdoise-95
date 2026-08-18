@@ -1,7 +1,8 @@
 const $ = (id) => document.getElementById(id);
 function esc(value) { return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
 
-const map = L.map("map", { zoomControl: false, preferCanvas: true }).setView([49.08, 2.1], 10);
+const VAL_DOISE_BOUNDS = [[48.88, 1.60], [49.25, 2.62]];
+const map = L.map("map", { zoomControl: false, preferCanvas: true }).fitBounds(VAL_DOISE_BOUNDS, { padding: [24, 24] });
 L.control.zoom({ position: "bottomright" }).addTo(map);
 L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", { subdomains: "abcd", maxZoom: 19, attribution: "© OpenStreetMap · © CARTO" }).addTo(map);
 
@@ -25,7 +26,20 @@ function categoryCount(key) {
 }
 
 const state = { categories: new Set(Object.keys(CATEGORIES)), markers: new Map() };
-const workLayer = L.layerGroup().addTo(map);
+const workLayer = L.markerClusterGroup({
+  maxClusterRadius: 50,
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: false,
+  iconCreateFunction: (cluster) => {
+    const count = cluster.getChildCount();
+    const size = count < 10 ? 34 : count < 50 ? 42 : 52;
+    return L.divIcon({
+      html: `<div class="cluster-bubble" style="width:${size}px;height:${size}px;line-height:${size}px">${count}</div>`,
+      className: "cluster-icon",
+      iconSize: L.point(size, size),
+    });
+  },
+}).addTo(map);
 
 async function loadDepartmentOutline() {
   try {
@@ -44,7 +58,7 @@ async function loadDepartmentOutline() {
     layer.addTo(map);
     layer.bringToBack();
     map.invalidateSize(false);
-    map.fitBounds(layer.getBounds(), { padding: [40, 40], maxZoom: 11 });
+    map.fitBounds(VAL_DOISE_BOUNDS, { padding: [24, 24] });
   } catch {
     $("mapStatus").textContent = "Fond communal momentanément indisponible · œuvres accessibles";
   }
@@ -161,7 +175,8 @@ function resetApplicationState() {
   $("detailPanel").classList.remove("open");
   document.querySelectorAll("#layerList input").forEach((x) => (x.checked = true));
   renderWorks();
-  map.setView([49.08, 2.1], 10, { animate: false });
+  map.invalidateSize(false);
+  map.fitBounds(VAL_DOISE_BOUNDS, { padding: [24, 24], animate: false });
 }
 
 function openDashboard() {
