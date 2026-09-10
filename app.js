@@ -4,7 +4,7 @@ function esc(value) { return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "
 const VAL_DOISE_BOUNDS = [[48.88, 1.60], [49.25, 2.62]];
 const map = L.map("map", { zoomControl: false, preferCanvas: true }).fitBounds(VAL_DOISE_BOUNDS, { padding: [24, 24] });
 L.control.zoom({ position: "bottomright" }).addTo(map);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", { subdomains: "abcd", maxZoom: 19, attribution: "© OpenStreetMap · © CARTO" }).addTo(map);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap contributors" }).addTo(map);
 
 const ALL_WORKS = [
   ...WORKS,
